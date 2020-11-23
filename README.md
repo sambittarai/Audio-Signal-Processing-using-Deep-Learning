@@ -3,5 +3,6 @@ This repository includes an entire workflow for Audio Classification using Deep 
 
 ## Requirements
 * Python
+* Pandas
 * Librosa
 * python_speech_features

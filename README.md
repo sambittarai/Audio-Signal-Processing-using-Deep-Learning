@@ -13,3 +13,4 @@ The task is to build an automatic audio tagging system using a dataset of audio 
 ## Dataset
 
 ### Class Distribution
+![](Images/class_distribution.png)

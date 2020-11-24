@@ -37,6 +37,23 @@ def build_rand_feat():
 
 	return X, y
 
+def get_conv_model():
+	model = Sequential()
+	model.add(Conv2D(16, (3, 3), activation='relu', strides=(1,1), padding='same', input_shape=input_shape))
+	model.add(Conv2D(32, (3, 3), activation='relu', strides=(1,1), padding='same'))
+	model.add(Conv2D(64, (3, 3), activation='relu', strides=(1,1), padding='same'))
+	model.add(Conv2D(128, (3, 3), activation='relu', strides=(1,1), padding='same'))
+	model.add(MaxPool2D((2, 2)))
+	model.add(Dropout(0.5))
+	model.add(Flatten())
+	model.add(Dense(128, activation='relu'))
+	model.add(Dense(64, activation='relu'))
+	model.add(Dense(10, activation='softmax'))
+	model.summary()
+	model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['acc'])
+
+	return model
+
 
 
 class Config:
@@ -52,9 +69,6 @@ class Config:
 df = pd.read_csv("/content/drive/MyDrive/Audio Signal Processing/Clean Data/instruments_clean.csv")
 df.set_index('Index', inplace=True)
 
-#for f in df.index:
-#	rate, signal = wavfile.read(f)
-
 classes = list(np.unique(df.Label))
 class_dist = df.groupby(['Label'])['length'].mean()
 
@@ -65,7 +79,16 @@ choices = np.random.choice(class_dist.index, p=prob_dist)
 config = Config(mode='conv')
 if config.mode == 'conv':
 	X, y = build_rand_feat()
+	y_flat = np.argmax(y, axis=1)
+	input_shape = (X.shape[1], X.shape[2], 1)
+	model = get_conv_model()
 
 elif config.mode == 'time':
 	X, y = build_rand_feat()
+	y_flat = np.argmax(y, axis=1)
+	input_shape = (X.shape[1], X.shape[2])
+	model = get_recurrent_model()
+
+class_weight = compute_class_weight('balanced', np.unique(y_flat), y_flat)
+model.fit(X, y, epochs=10, batch_size=32, shuffle=True, class_weight=class_weight)
 

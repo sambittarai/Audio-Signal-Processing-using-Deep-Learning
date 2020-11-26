@@ -9,7 +9,16 @@ from keras.utils import to_categorical
 from sklearn.utils.class_weight import compute_class_weight
 from tqdm import tqdm
 from python_speech_features import mfcc
+from cfg import Config
 
+def check_data():
+	if os.path.isfile(config.p_path):
+		print('Loading existing data for {} model'.format(config.mode))
+		with open(config.p_path, 'rb') as handle:
+			tmp = pickle.load(handle)
+			return tmp
+	else:
+		return None
 
 def build_rand_feat():
 	#Creating Samples
@@ -22,11 +31,13 @@ def build_rand_feat():
 		label = df.at[file, 'Label']
 		rand_index = np.random.randint(0, wav.shape[0] - config.step)
 		sample = wav[rand_index:rand_index + config.step]
-		X_sample = mfcc(sample, rate, numcep=config.nfeat, nfilt=config.nfilt, nfft=config.nfft).T
+		X_sample = mfcc(sample, rate, numcep=config.nfeat, nfilt=config.nfilt, nfft=config.nfft)
 		_min = min(np.amin(X_sample), _min)
 		_max = max(np.amax(X_sample), _max)
-		X.append(X_sample if config.mode == 'conv' else X_sample.T)
+		X.append(X_sample)
 		y.append(classes.index(label))
+	config.min = _min
+	config.max = _max
 	X, y = np.array(X), np.array(y)
 	X = (X - _min) / (_max - _min)
 	if config.mode == 'conv':
@@ -70,16 +81,6 @@ def get_recurrent_model():
 	model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['acc'])
 
 	return model
-
-
-class Config:
-	def __init__(self, mode='conv', nfilt=26, nfeat=13, nfft=512, rate=16000):
-		self.mode = mode
-		self.nfilt = nfilt
-		self.nfeat = nfeat
-		self.nfft = nfft
-		self.rate = rate
-		self.step = int(rate/10)
 
 
 df = pd.read_csv("/content/drive/MyDrive/Audio Signal Processing/Clean Data/instruments_clean.csv")
